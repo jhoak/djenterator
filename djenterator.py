@@ -1,39 +1,47 @@
 """
-@palm mutes
-@hammer-ons
-@pull-offs
-//slide up
-//slide down
-//vibrato
-//bend
-//harmonic
-//pre bend
-//bend release
-//pre bend release
-//bend release bend
-//dead note
+Implemented
+palm mutes
+hammer-ons
+pull-offs
+9strings
 
-**also separate guitar(s)
+Not implemented (and won't be probs)
+slide up
+slide down
+vibrato
+bend
+harmonic
+pre bend
+bend release
+pre bend release
+bend release bend
+dead note
+
+TODO
+repeat measure(s)
+consecutive notes (mute patterns?)
+also separate guitar(s)
 """
 import random
 
 notes = ['a', 'a#', 'b', 'c', 'c#', 'd', 'd#', 'e', 'f', 'f#', 'g', 'g#']
-notes_per_phrase = 16
+notes_per_phrase = 64
+num_strings = 9
 
 def next_note(base_note, step):
 	return notes[(notes.index(base_note) + step) % len(notes)]
 
 class Tuning:
-	def __init__(self, type='standard', base_note='e'):
+	def __init__(self, type='standard', base_note='c#'):
 		self.base_note = base_note
-		self.increments = [5,5,4,5]
+		self.increments = ([5] * (num_strings - 4)) + [4,5]
 		type = type.lower()
 		if type != 'standard' and type != 'drop':
 			raise ValueError("Only standard or drop tuning, please.")
 		self.increments.insert(0, (5 if type == 'standard' else 7))
 	def notes(self):
 		note_ls = [self.base_note]
-		for i in range(5):
+		for i in range(num_strings - 1):
 			note_ls.insert(len(note_ls), next_note(note_ls[i], self.increments[i]))
 		return note_ls
 	def __str__(self):
@@ -68,13 +76,14 @@ class Phrase:
 	def __init__(self, tuning):
 		num_notes = notes_per_phrase
 		notes = tuning.notes()
-		self.lines = [PhraseLine(notes[5-i], num_notes) for i in range(6)]
+		strs = num_strings
+		self.lines = [PhraseLine(notes[strs-i-1], num_notes) for i in range(strs)]
 		self.mute_line = MuteLine(num_notes)
 	def set_notes(self, preset_notes):
-		self.lines[5].notes = preset_notes[0]
+		self.lines[num_strings-1].notes = preset_notes[0]
 		self.mute_line.notes = preset_notes[1]
 	def gen_notes(self, note_rate=0.5, zero_rate=0.75, mute_rate=0.5, hammerpull_rate=0.25):
-		string_notes, mutes = self.lines[5].notes, self.mute_line.notes
+		string_notes, mutes = self.lines[num_strings-1].notes, self.mute_line.notes
 		random.seed()
 		roll = random.random
 		i = 0
