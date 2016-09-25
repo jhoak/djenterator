@@ -4,10 +4,10 @@ This tool generates fake guitar tabs that aim to humorously imitate the guitar s
 
 It uses only two notes on the widest string of a traditional guitar, 0 and 1 - the open string, and the first fret - along with a variety of strumming patterns (muting, tremolo, hammer-ons/pull- offs etc) to create random-ish rhythms that still represent all the things you might hear in a djent song, only exaggerated for comic value.
 
-To use this tool, you can simply download the Python source file, place it any-
+To use this tool, you can simply download the Python source, place it any-
 where, and run it on the command line via:
 
-'python path/to/file/djenterator.py'
+`python path/to/file/djenterator.py`
 
 and it will create a "songs" folder in the current directory, containing the
 tabs it just generated.
