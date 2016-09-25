@@ -5,6 +5,7 @@ hammer-ons
 pull-offs
 9strings
 repeat measure(s)
+tremolo
 
 Not implemented (and won't be probs)
 slide up
@@ -19,8 +20,8 @@ bend release bend
 dead note
 
 TODO
-consecutive notes (mute patterns?)
-also separate guitar(s)
+breakdowns
+separate guitar line
 """
 import random
 
@@ -83,7 +84,7 @@ class Phrase:
 	def set_notes(self, preset_notes):
 		self.lines[num_strings-1].notes = preset_notes[0]
 		self.mute_line.notes = preset_notes[1]
-	def gen_notes(self, note_rate=0.5, zero_rate=0.75, mute_rate=0.5, hammerpull_rate=0.25, repeat_rate=0.66):
+	def gen_notes(self, note_rate=0.5, zero_rate=0.75, mute_rate=0.5, hammerpull_rate=0.25, repeat_rate=0.66, tremolo_rate=0.66):
 		string_notes, mutes = self.lines[num_strings-1].notes, self.mute_line.notes
 		random.seed()
 		roll = random.random
@@ -99,7 +100,16 @@ class Phrase:
 				# Now add effects
 				adding = True
 				while adding and i < notes_per_phrase - 1:
-					if roll() < hammerpull_rate:
+					if roll() < tremolo_rate:
+						while i < notes_per_phrase - 1:
+							if roll() < note_rate:
+								string_notes[i] = '0' if roll() < zero_rate else '1'
+								if roll() < mute_rate:
+									mutes[i] = 'm'
+								i += 1
+							else:
+								break
+					if roll() < hammerpull_rate and i < notes_per_phrase - 1:
 						string_notes[i:i+2] = ['h', '1'] if string_notes[i-1] == '0' else ['p', '0']
 						if roll() < mute_rate:
 							mutes[i+1] = 'm'
@@ -109,7 +119,7 @@ class Phrase:
 			else:
 				i += 1
 		if roll() < repeat_rate:
-			halfway = notes_per_phrase / 2
+			halfway = notes_per_phrase // 2
 			string_notes[halfway:] = string_notes[0:halfway]
 			mutes[halfway:] = mutes[:halfway]
 			if string_notes[halfway-1] in bad_endings:
@@ -120,7 +130,7 @@ class Phrase:
 		return '\n'.join([str(line) for line in (self.lines + [self.mute_line])])
 
 class Song:
-	def __init__(self, tuning, min_phrases, mult_phrase_rate = 0.7, note_rate=0.5):
+	def __init__(self, tuning, min_phrases, mult_phrase_rate = 0.5, note_rate=0.5):
 		num_phrases = 0
 		self.phrase_ls = []
 		while num_phrases < min_phrases:
