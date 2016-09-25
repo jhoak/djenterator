@@ -4,6 +4,7 @@ palm mutes
 hammer-ons
 pull-offs
 9strings
+repeat measure(s)
 
 Not implemented (and won't be probs)
 slide up
@@ -18,7 +19,6 @@ bend release bend
 dead note
 
 TODO
-repeat measure(s)
 consecutive notes (mute patterns?)
 also separate guitar(s)
 """
@@ -27,6 +27,7 @@ import random
 notes = ['a', 'a#', 'b', 'c', 'c#', 'd', 'd#', 'e', 'f', 'f#', 'g', 'g#']
 notes_per_phrase = 64
 num_strings = 9
+bad_endings = ['h', 'p']
 
 def next_note(base_note, step):
 	return notes[(notes.index(base_note) + step) % len(notes)]
@@ -82,7 +83,7 @@ class Phrase:
 	def set_notes(self, preset_notes):
 		self.lines[num_strings-1].notes = preset_notes[0]
 		self.mute_line.notes = preset_notes[1]
-	def gen_notes(self, note_rate=0.5, zero_rate=0.75, mute_rate=0.5, hammerpull_rate=0.25):
+	def gen_notes(self, note_rate=0.5, zero_rate=0.75, mute_rate=0.5, hammerpull_rate=0.25, repeat_rate=0.66):
 		string_notes, mutes = self.lines[num_strings-1].notes, self.mute_line.notes
 		random.seed()
 		roll = random.random
@@ -107,6 +108,13 @@ class Phrase:
 						adding = False
 			else:
 				i += 1
+		if roll() < repeat_rate:
+			halfway = notes_per_phrase / 2
+			string_notes[halfway:] = string_notes[0:halfway]
+			mutes[halfway:] = mutes[:halfway]
+			if string_notes[halfway-1] in bad_endings:
+				string_notes[halfway-1] = '-'
+				string_notes[-1] = '-'
 		return string_notes, mutes
 	def __str__(self):
 		return '\n'.join([str(line) for line in (self.lines + [self.mute_line])])
