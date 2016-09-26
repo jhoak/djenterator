@@ -1,5 +1,11 @@
-# Chromatic scale notes and possible tuning types
-chromatic_notes = ('a', 'a#', 'b', 'c', 'c#', 'd', 'd#', 'e', 'f', 'f#', 'g', 'g#')
+"""
+This module provides abstractions for musical structures, i.e.
+the chromatic scale, phrases, guitar tunings, and entire songs (many phrases).
+"""
+
+# Globals: Chromatic scale notes and possible tuning types
+chromatic_notes = ('a', 'a#', 'b', 'c', 'c#', 'd', 
+				   'd#', 'e', 'f', 'f#', 'g', 'g#')
 tuning_types = ('drop', 'standard')
 
 def next_note(base_note, offset):
