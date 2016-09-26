@@ -2,6 +2,7 @@ import random, os
 import djentils
 
 if __name__ == '__main__':
+	random.seed()
 	if not os.path.isdir("./songs"):
 		os.mkdir("songs")
 	for i in range(25):

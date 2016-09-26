@@ -72,11 +72,11 @@ class PhraseLine:
 		Of course, this represents the notes on just one string.
 		"""
 		start, end = self.base_note.rjust(2) + '|', '|'
-		qtr = notes_per_phrase // 4
+		qtr = len(self.notes) // 4
 
 		# Generate each of the four measures, then compose each one by their
 		# notes individually then concatenate with vertical bars inbetween
-		groups = (self.notes[i * qtr:(i+1) * qtr] for i in range(4))
+		groups = tuple(self.notes[i * qtr:(i+1) * qtr] for i in range(4))
 		groups = ["".join(groups[i]) for i in range(4)]
 		mid = "|".join(groups)
 		return start + mid + end
@@ -103,11 +103,11 @@ class MuteLine:
 		"""
 
 		start, end = '  {', '}'
-		qtr = notes_per_phrase // 4
+		qtr = len(self.notes) // 4
 		
 		# Generate each of the four measures, then compose each one by their
 		# notes individually then concatenate with vertical bars inbetween
-		groups = (self.notes[i * qtr:(i+1) * qtr] for i in range(4))
+		groups = tuple(self.notes[i * qtr:(i+1) * qtr] for i in range(4))
 		groups = ["".join(groups[i]) for i in range(4)]
 		mid = "|".join(groups)
 		return start + mid + end
@@ -162,13 +162,16 @@ class Song:
 	specified number of notes.
 	"""
 
-	def __init__(self):
+	def __init__(self, tuning):
 		"""Creates a new Song, though phrases must be added manually."""
 		self.phrase_ls = []
+		self.tuning = tuning
 
-	def add_phrase(self, phrase):
+	def add_phrase(self, presets):
+		p = Phrase(self.tuning, len(presets[0]), len(self.tuning.notes()))
+		p.set_notes(presets)
 		end_index = len(self.phrase_ls)
-		self.phrase_ls.insert(end_index, phrase)
+		self.phrase_ls.insert(end_index, p)
 
 	def __str__(self):
 		return '\n\n'.join([str(meas) for meas in self.phrase_ls])
