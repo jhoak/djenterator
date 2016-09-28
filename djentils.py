@@ -14,7 +14,6 @@ phrase_repeat_rate = 0.5
 default_tuning = music.Tuning("drop", "a")
 notes_per_phrase = 64
 _bad_endings = ['h', 'p']
-random.seed()
 _roll = random.random
 
 def _default_note_ls():
@@ -80,18 +79,19 @@ def gen_phrase():
 	#_roll_repeated_measures(notes, mutes)
 	return notes, mutes
 
-def gen_song(min_phrases, tuning=default_tuning):
+def gen_song(min_phrases, max_phrases=None, tuning=default_tuning):
 	num_phrases = 0
 	song = music.Song(tuning)
-	while num_phrases < min_phrases:
+	if not max_phrases:
+		max_phrases = float("inf")
+	while num_phrases < min_phrases and num_phrases < max_phrases:
 		# Generate a phrase and add to the song
 		presets = gen_phrase()
 		song.add_phrase(presets)
 		num_phrases += 1
-		global debug
 
 		# Duplicate it if we need to
-		while random.random() < phrase_repeat_rate:
+		while random.random() < phrase_repeat_rate and num_phrases < max_phrases:
 			song.add_phrase(presets)
 			num_phrases += 1
 	return song
