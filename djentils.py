@@ -84,7 +84,7 @@ def gen_song(min_phrases, max_phrases=None, tuning=default_tuning):
 	song = music.Song(tuning)
 	if not max_phrases:
 		max_phrases = float("inf")
-	while num_phrases < min_phrases and num_phrases < max_phrases:
+	while num_phrases < min(min_phrases, max_phrases):
 		# Generate a phrase and add to the song
 		presets = gen_phrase()
 		song.add_phrase(presets)
