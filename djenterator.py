@@ -10,14 +10,11 @@ from djentils import gen_song
 # Globals
 _on_windows = re.match(platform, 'win') or re.match(platform, 'cygwin')
 path_sep = '\\' if _on_windows else '/'
-force_overwrites = False
 
 # Generator options (changed by args)
-_defaults = {'numfiles': 1, 
-			'filename': 'i_love_djent.txt', 
-			'dirname': './djenterated_songs',
-			'minphrases': random.randint(80,120), 
-			'maxphrases': maxint}
+_names = ('numfiles', 'filename', 'dirname', 'minphrases', 'maxphrases', 'force_overwrites')
+_default_vals = (1, 'i_love_djent.txt', './djenterated_songs', random.randint(80,120), maxint, False)
+_defaults = dict(zip(_names, _default_vals))
 options = _defaults.copy()
 
 def trim_quotes(string):
@@ -27,13 +24,10 @@ def trim_quotes(string):
 	return string
 
 def getkey(keystr):
-	option_names = {'-n' : 'numfiles',
-					'-o' : 'filename',
-					'-d' : 'dirname',
-					'-min': 'minphrases',
-					'-max': 'maxphrases'}
-	if keystr in option_names.keys():
-		return option_names[keystr]
+	option_names = ('-n', '-o', '-d', '-min', '-max', '-f')
+	option_map = dict(zip(option_names, _names))
+	if keystr in option_map.keys():
+		return option_map[keystr]
 	else:
 		raise ValueError('Invalid argument', keystr)
 
@@ -74,18 +68,22 @@ def process_other_input(args):
 		try:
 			arg = trim_quotes(args[index])
 			key = getkey(arg)
-			value = trim_quotes(args[index+1])
-			if type(options[key]) is int:
-				value = toint(value)
-			options[key] = value
-			index += 2
+			if key == 'force_overwrites':
+				options[key] = True
+				index += 1
+			else:
+				value = trim_quotes(args[index+1])
+				if type(options[key]) is int:
+					value = toint(value)
+				options[key] = value
+				index += 2
 		except ValueError as err:
 			return err
 	return None
 
 def djenterate():
-	names = ('numfiles', 'filename', 'dirname', 'minphrases', 'maxphrases')
-	numfiles, filename, dirname, minphrases, maxphrases = (options[name] for name in names)
+	numfiles, filename, dirname = (options[name] for name in _names[:3])
+	minphrases, maxphrases, force_overwrites = (options[name] for name in _names[3:])
 	if not path.isdir(dirname):
 		makedirs(dirname)
 	for i in range(numfiles):
@@ -111,7 +109,7 @@ if __name__ == '__main__':
 
 	err = process_other_input(args)
 	if err:
-		print("ERROR: " + err)
+		print("ERROR:", err)
 		exit(-1)
 	else:
 		exit(djenterate())
