@@ -1,115 +1,180 @@
-"""\
-Here's a docstring!
 """
+This module contains the main script used to generate new songs.
+It will NOT send songs to stdout but rather write them to files
+on disk, based on the passed parameters (if any).
 
+Usage: python djenterator.py [-help] [-n <number>] [-o <filename>]
+        [-d <directoryname>] [-min <number>] [-max <number>] [-f]
+Parameters:
+    -help   Show this helpful info.
+    -n      Specifies the number of files to generate, aka the number of songs
+    -o      The name of the output file.
+    -d      The directory where the output file should be placed.
+    -min    The minimum number of phrases to generate in each song. (Note that
+            the resulting number of phrases will still be a bit random.)
+    -max    The maximum number of phrases to generate in each song.
+    -f      Forcibly overwrite files when generated song files have the same
+            name as files in the output directory.
+"""
 import random, re
 from os import path, makedirs
 from sys import argv, platform, exit, maxsize as maxint
 from djentils import gen_song
 
-# Globals
+# Globals for convenience
 _on_windows = re.match(platform, 'win') or re.match(platform, 'cygwin')
-path_sep = '\\' if _on_windows else '/'
+_path_sep = '\\' if _on_windows else '/'
+_quotes = ('\'', "\"")
 
-# Generator options (changed by args)
-_names = ('numfiles', 'filename', 'dirname', 'minphrases', 'maxphrases', 'force_overwrites')
-_default_vals = (1, 'i_love_djent.txt', './djenterated_songs', random.randint(80,120), maxint, False)
-_defaults = dict(zip(_names, _default_vals))
+# Make list of possible parms and map to a set of default values
+_short_parm_names = ('-n', '-o', '-d', '-min', '-max', '-f')
+_full_parm_names = ('numfiles', 'filename', 'dirname', 
+                    'minphrases', 'maxphrases', 'force_overwrites')
+_parm_map = dict(zip(short_parm_names, _full_parm_names))
+
+_default_vals = (1, 'i_love_djent.txt', './djenterated_songs', 
+                random.randint(80,120), maxint, False)
+_defaults = dict(zip(_full_parm_names, _default_vals))
 options = _defaults.copy()
 
-def trim_quotes(string):
-	quotes = ("'", '"')
-	while string[0] in quotes and string[-1] in quotes:
-		string = string[1:-1]
-	return string
+# Convenience Methods
+def _trim_quotes(string):
+    """Takes strings with surrounding quotes and removes the quotes."""
+    while string[0] in _quotes and string[-1] in _quotes:
+        string = string[1:-1]
+    return string
 
-def getkey(keystr):
-	option_names = ('-n', '-o', '-d', '-min', '-max', '-f')
-	option_map = dict(zip(option_names, _names))
-	if keystr in option_map.keys():
-		return option_map[keystr]
-	else:
-		raise ValueError('Invalid argument', keystr)
+def _getkey(keystr):
+    """
+    Returns the full parm-name corresponding to a short one.
+    Example: -d -> dirname
+    """
+    if keystr in _parm_map.keys():
+        return _parm_map[keystr]
+    else:
+        raise ValueError('Invalid argument', keystr)
 
-def toint(string):
-	try:
-		num = int(string)
-		if num < 1:
-			raise ValueError()
-		return num
-	except ValueError:
-		raise ValueError("Invalid numerical parm " + string)
+def _to_pos_int(string):
+    """Gets a positive int from a string and returns it."""
+    try:
+        num = int(string)
+        if num < 1:
+            raise ValueError()
+        return num
+    except ValueError:
+        raise ValueError("Invalid numerical parm " + string)
 
-def whole_filename(dirname, filename):
-	last = dirname[-1]
-	if last != path_sep:
-		dirname += path_sep
-	return dirname + filename
+def _whole_filename(dirname, filename):
+    """
+    Puts together a filename including the file itself plus the directory.
 
-def add_filenum(name, num):
-	if '.' not in name:
-		return name + str(num)
-	else:
-		index = name.rfind('.')
-		return name[:index] + str(num) + name[index:]
+    Example: C/Users/Edgar/Desktop/secret.txt
+    """
+    last = dirname[-1]
+    if last != path_sep:
+        dirname += path_sep
+    return dirname + filename
 
-def get_bool_resp(prompt):
-	while True:
-		resp = input(prompt).lower()
-		if resp in ('y', 'yes'):
-			return True
-		elif resp in ('n', 'no'):
-			return False
+def _add_filenum(name, num):
+    """
+    Adds a number to a file (when we're generating >1 file)
+    Example: i_love_djent.txt -> i_love_djent1.txt, i_love_djent2.txt, ...
+    """
+    if '.' not in name:
+        return name + str(num)
+    else:
+        index = name.rfind('.')
+        return name[:index] + str(num) + name[index:]
 
-def process_other_input(args):
-	global options
-	index = 0
-	while index < len(args):
-		try:
-			arg = trim_quotes(args[index])
-			key = getkey(arg)
-			if key == 'force_overwrites':
-				options[key] = True
-				index += 1
-			else:
-				value = trim_quotes(args[index+1])
-				if type(options[key]) is int:
-					value = toint(value)
-				options[key] = value
-				index += 2
-		except ValueError as err:
-			return err
-	return None
+def _get_bool_resp(prompt):
+    """Gets a yes or no from user input and maps to a boolean."""
+    while True:
+        resp = input(prompt).lower()
+        if resp in ('y', 'yes'):
+            return True
+        elif resp in ('n', 'no'):
+            return False
+
+def _process_other_input(args):
+    """Processes command-line args (but not -help)."""
+    index = 0
+    while index < len(args):
+        try:
+            # Get the associated parm name
+            arg = _trim_quotes(args[index])
+            key = _getkey(arg)
+            if key == 'force_overwrites':
+                options[key] = True
+                index += 1
+            else:
+                # Handle parms of the form -name <value>
+                value = _trim_quotes(args[index+1])
+
+                # If it's a string but the parm type should be int, convert it
+                if type(options[key]) is int:
+                    value = _to_pos_int(value)
+                options[key] = value
+                index += 2
+        except ValueError as err:
+            # Bad argument somehow
+            return err
+    return None
+    
+def _writefile(songfile, song):
+    """Opens a file and writes a song tab to it."""
+    f = open(songfile, 'w')
+    f.write(str(song))
+    f.close()
 
 def djenterate():
-	numfiles, filename, dirname = (options[name] for name in _names[:3])
-	minphrases, maxphrases, force_overwrites = (options[name] for name in _names[3:])
-	if not path.isdir(dirname):
-		makedirs(dirname)
-	for i in range(numfiles):
-		song = gen_song(minphrases, maxphrases)
-		songfile = whole_filename(dirname, filename)
-		if numfiles > 1:
-			songfile = add_filenum(songfile, i + 1)
-		if path.isfile(songfile):
-			prompt = "Overwrite file \"" + songfile + "\"? (Y/N): "
-			overwrite = force_overwrites or get_bool_resp(prompt)
-			if not overwrite:
-				continue
-		f = open(songfile, 'w')
-		f.write(str(song))
-		f.close()
-	return 0
+    """
+    Based on the options we got (after processing args), make a song(s).
 
+    Calling this method without doing any input processing will just
+    generate a song using default settings. process_other_args() should be
+    called first. And before that, also need to check if -help was specified.
+    """
+
+    # Get our options and their values
+    value_of = lambda name: options[name]
+    option_vals = map(value_of, _full_parm_names)
+    numfiles, filename, dirname = option_vals[:3]
+    minphrases, maxphrases, force_overwrites = option_vals[3:]
+
+    # Make the directory(ies) if it doesn't exist yet
+    if not path.isdir(dirname):
+        makedirs(dirname)
+
+    # Generate <numfiles> songs
+    for i in range(numfiles):
+        song = gen_song(minphrases, maxphrases)
+        songfile = _whole_filename(dirname, filename)
+
+        # Number files to avoid conflicts if we have more than 1
+        if numfiles > 1:
+            songfile = _add_filenum(songfile, i + 1)
+
+        # Also make sure not to overwrite if not forcing and user says not to
+        if path.isfile(songfile):
+            prompt = "Overwrite file \"" + songfile + "\"? (Y/N): "
+            overwrite = force_overwrites or _get_bool_resp(prompt)
+            if not overwrite:
+                continue
+        _writefile(songfile, song)
+    return 0
+
+# Main script layout. Process args then djenterate some songs
 if __name__ == '__main__':
-	args = argv[1:]
-	if '-help' in args:
-		print(__doc__)
-		exit(0)
+    args = argv[1:]
 
-	err = process_other_input(args)
-	if err:
-		print("ERROR:", err)
-		exit(-1)
-	else:
-		exit(djenterate())
+    # Check if -help is specified here, just for convenience
+    if '-help' in args:
+        print(__doc__)
+        exit(0)
+
+    err = _process_other_input(args)
+    if err:
+        print("ERROR:", err)
+        exit(-1)
+    else:
+        exit(djenterate())
