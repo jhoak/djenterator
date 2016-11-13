@@ -17,33 +17,34 @@ Parameters:
             name as files in the output directory.
 """
 
-import random, re
+import random
+import re
 from os import path, makedirs
-from sys import argv, platform, exit, maxsize as maxint
-from djentils import gen_song
+from sys import argv, platform, exit as sysexit, maxsize as maxint
+from djenterator.djentils import gen_song
 
 # Globals for convenience
-_on_windows = re.match(platform, 'win') or re.match(platform, 'cygwin')
-_path_sep = '\\' if _on_windows else '/'
-_quotes = ('\'', "\"")
+_ON_WINDOWS = re.match(platform, 'win') or re.match(platform, 'cygwin')
+_PATH_SEP = '\\' if _ON_WINDOWS else '/'
+_QUOTES = ('\'', "\"")
 
 # Make list of possible parms and map to a set of default values
-_short_parm_names = ('-n', '-o', '-d', '-min', '-max', '-f')
-_full_parm_names = ('numfiles', 'filename', 'dirname', 
+_SHORT_PARM_NAMES = ('-n', '-o', '-d', '-min', '-max', '-f')
+_FULL_PARM_NAMES = ('numfiles', 'filename', 'dirname',
                     'minphrases', 'maxphrases', 'force_overwrites')
-_parm_map = dict(zip(short_parm_names, _full_parm_names))
+_PARM_MAP = dict(zip(_SHORT_PARM_NAMES, _FULL_PARM_NAMES))
 
-_default_vals = (1, 'i_love_djent.txt', './djenterated_songs', 
-                random.randint(80,120), maxint, False)
-_defaults = dict(zip(_full_parm_names, _default_vals))
-options = _defaults.copy()
+_DEFAULT_PARM_VALS = (1, 'i_love_djent.txt', './djenterated_songs',
+                      random.randint(80, 120), maxint, False)
+_DEFAULTS_MAP = dict(zip(_FULL_PARM_NAMES, _DEFAULT_PARM_VALS))
+OPTIONS = _DEFAULTS_MAP.copy()
 
 
 # Convenience Methods
 def _trim_quotes(string):
     """Takes a string with surrounding quotes and removes the quotes."""
 
-    while string[0] in _quotes and string[-1] in _quotes:
+    while string[0] in _QUOTES and string[-1] in _QUOTES:
         string = string[1:-1]
     return string
 
@@ -53,11 +54,11 @@ def _getkey(keystr):
     Returns the full parm-name corresponding to a short one.
     Example: -d -> dirname
 
-    keystr must be in _short_parm_names.
+    keystr must be in _SHORT_PARM_NAMES.
     """
 
-    if keystr in _parm_map.keys():
-        return _parm_map[keystr]
+    if keystr in _PARM_MAP.keys():
+        return _PARM_MAP[keystr]
     else:
         raise ValueError('Invalid argument', keystr)
 
@@ -85,8 +86,8 @@ def _whole_filename(dirname, filename):
     """
 
     last = dirname[-1]
-    if last != path_sep:
-        dirname += path_sep
+    if last != _PATH_SEP:
+        dirname += _PATH_SEP
     return dirname + filename
 
 
@@ -122,57 +123,57 @@ def _get_bool_resp(prompt):
             return False
 
 
-def _process_other_input(args):
+def _process_other_input(arg_ls):
     """Processes a list of command-line args (but not -help)."""
 
     index = 0
-    while index < len(args):
+    while index < len(arg_ls):
         try:
             # Get the associated parm name
-            arg = _trim_quotes(args[index])
+            arg = _trim_quotes(arg_ls[index])
             key = _getkey(arg)
             if key == 'force_overwrites':
-                options[key] = True
+                OPTIONS[key] = True
                 index += 1
             else:
                 # Handle parms of the form -name <value>
-                value = _trim_quotes(args[index+1])
+                value = _trim_quotes(arg_ls[index+1])
 
                 # If it's a string but the parm type should be int, convert it
-                if type(options[key]) is int:
+                if isinstance(OPTIONS[key], int):
                     value = _to_pos_int(value)
-                options[key] = value
+                OPTIONS[key] = value
                 index += 2
         except ValueError as err:
             # Bad argument somehow
             return err
     return None
-    
 
-def _writefile(songfile, song):
+
+def _writefile(filename, song):
     """
     Opens a file and writes a song tab to it.
 
-    songfile is the name of the file to open. song must be a Song object.
+    filename is the name of the file to open. song must be a Song object.
     """
 
-    f = open(songfile, 'w')
-    f.write(str(song))
-    f.close()
+    songfile = open(filename, 'w')
+    songfile.write(str(song))
+    songfile.close()
 
 
 def djenterate():
     """
-    Based on the options we got (after processing args), make a song(s).
+    Based on the OPTIONS we got (after processing args), make a song(s).
 
     Calling this method without doing any input processing will just
     generate a song using default settings. process_other_args() should be
     called first. And before that, also need to check if -help was specified.
     """
 
-    # Get our options and their values
-    value_of = lambda name: options[name]
-    option_vals = map(value_of, _full_parm_names)
+    # Get our OPTIONS and their values
+    value_of = lambda name: OPTIONS[name]
+    option_vals = list(map(value_of, _FULL_PARM_NAMES))
     numfiles, filename, dirname = option_vals[:3]
     minphrases, maxphrases, force_overwrites = option_vals[3:]
 
@@ -206,11 +207,11 @@ if __name__ == '__main__':
     # Check if -help is specified here, just for convenience
     if '-help' in args:
         print(__doc__)
-        exit(0)
+        sysexit(0)
 
     err = _process_other_input(args)
     if err:
         print("ERROR:", err)
-        exit(-1)
+        sysexit(-1)
     else:
-        exit(djenterate())
+        sysexit(djenterate())

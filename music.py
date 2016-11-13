@@ -12,20 +12,20 @@ the next octave up.
 """
 
 # Notes on the chromatic scale
-chromatic_notes = ('a', 'a#', 'b', 'c', 'c#', 'd',
+CHROMATIC_NOTES = ('a', 'a#', 'b', 'c', 'c#', 'd',
                    'd#', 'e', 'f', 'f#', 'g', 'g#')
 
 def next_note(base_note, offset):
     """
     Given a chromatic scale note, returns the one <offset> semitones up/down.
 
-    The base note can be anything in chromatic_notes, of course. offset must
+    The base note can be anything in CHROMATIC_NOTES, of course. offset must
     be an integer.
     """
 
-    base_index = chromatic_notes.index(base_note.lower())
-    next_index = (base_index + offset) % len(chromatic_notes)
-    return chromatic_notes[next_index]
+    base_index = CHROMATIC_NOTES.index(base_note.lower())
+    next_index = (base_index + offset) % len(CHROMATIC_NOTES)
+    return CHROMATIC_NOTES[next_index]
 
 
 class Tuning:
@@ -36,12 +36,12 @@ class Tuning:
         Makes a new tuning for a guitar with some # of strings.
 
         Unless arguments are specified, each new tuning is aimed at a 9-string
-        guitar and is in C# standard (so the notes are EBGDAEBF#C#), a not-so- 
+        guitar and is in C# standard (so the notes are EBGDAEBF#C#), a not-so-
         uncommon djent tuning. (This assumes all 3 extra strings are thicker
         than the 6th string already.)
 
         tuning_type must be 'drop' or 'standard'. base_note can be anything in
-        chromatic_notes. num_strings must be an integer greater than 1.
+        CHROMATIC_NOTES. num_strings must be an integer greater than 1.
         """
 
         self._base_note = base_note.lower()
@@ -70,7 +70,7 @@ class Tuning:
         """Return this tuning's type (drop or standard)."""
         return self._tuning_type
 
-    def _notes(self):
+    def notes(self):
         """Return the notes of this tuning in a tuple."""
         return tuple(self._notes)
 
@@ -189,8 +189,8 @@ class _Phrase:
         tuning must be a Tuning object, num_notes must be an integer >= 4, and
         num_strings must be an integer >= 2.
         """
-        
-        tuning_notes = tuning._notes()
+
+        tuning_notes = tuning.notes()
         strs = num_strings
         self.num_strings = strs
 
@@ -206,7 +206,7 @@ class _Phrase:
         self.mute_line = _MuteLine(num_notes)
 
 
-    def _set_notes(self, notes, mutes):
+    def set_notes(self, notes, mutes):
         """
         Set the notes + mutes for this phrase, given them as arguments.
 
@@ -236,7 +236,7 @@ class _Phrase:
         widest one are to be played, which explains why notes are only on
         the lower E string here.
         """
-        lines = [str(line) for line in (self.lines + [self.mute_line])]
+        lines = [str(line) for line in self.lines + [self.mute_line]]
         return '\n'.join(lines)
 
 
@@ -270,16 +270,16 @@ class Song:
         Adds a phrase to this, given a set of notes and mutes to use.
 
         notes and mutes must be lists of equal length. notes must only have
-        notes of the chromatic scale or -'s, and mutes must have only -'s or 
+        notes of the chromatic scale or -'s, and mutes must have only -'s or
         m's.
         """
 
-        num_notes = len(presets[0])
-        num_strings = len(self._tuning._notes())
+        num_notes = len(notes)
+        num_strings = len(self._tuning.notes())
 
-        p = _Phrase(self._tuning, num_notes, num_strings)
-        p._set_notes(notes, mutes)
-        self._phrase_ls.append(p)
+        phrase = _Phrase(self._tuning, num_notes, num_strings)
+        phrase.set_notes(notes, mutes)
+        self._phrase_ls.append(phrase)
 
 
     def __str__(self):
@@ -290,4 +290,4 @@ class Song:
         as all of the phrases with two newlines between each pair.
         """
 
-        return '\n\n'.join([str(p) for p in self_.phrase_ls])
+        return '\n\n'.join([str(p) for p in self._phrase_ls])
