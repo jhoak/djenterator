@@ -16,6 +16,7 @@ Parameters:
     -f      Forcibly overwrite files when generated song files have the same
             name as files in the output directory.
 """
+
 import random, re
 from os import path, makedirs
 from sys import argv, platform, exit, maxsize as maxint
@@ -37,25 +38,33 @@ _default_vals = (1, 'i_love_djent.txt', './djenterated_songs',
 _defaults = dict(zip(_full_parm_names, _default_vals))
 options = _defaults.copy()
 
+
 # Convenience Methods
 def _trim_quotes(string):
-    """Takes strings with surrounding quotes and removes the quotes."""
+    """Takes a string with surrounding quotes and removes the quotes."""
+
     while string[0] in _quotes and string[-1] in _quotes:
         string = string[1:-1]
     return string
+
 
 def _getkey(keystr):
     """
     Returns the full parm-name corresponding to a short one.
     Example: -d -> dirname
+
+    keystr must be in _short_parm_names.
     """
+
     if keystr in _parm_map.keys():
         return _parm_map[keystr]
     else:
         raise ValueError('Invalid argument', keystr)
 
+
 def _to_pos_int(string):
     """Gets a positive int from a string and returns it."""
+
     try:
         num = int(string)
         if num < 1:
@@ -64,30 +73,47 @@ def _to_pos_int(string):
     except ValueError:
         raise ValueError("Invalid numerical parm " + string)
 
+
 def _whole_filename(dirname, filename):
     """
     Puts together a filename including the file itself plus the directory.
 
     Example: C/Users/Edgar/Desktop/secret.txt
+
+    dirname must be a directory name. filename must be a file name (for this,
+    no files nested in directories, please; an example would be foo/bar.txt)
     """
+
     last = dirname[-1]
     if last != path_sep:
         dirname += path_sep
     return dirname + filename
 
+
 def _add_filenum(name, num):
     """
     Adds a number to a file (when we're generating >1 file)
     Example: i_love_djent.txt -> i_love_djent1.txt, i_love_djent2.txt, ...
+
+    name should be a filename, which may or may not have an extension. num
+    should be a real number >= 0.
     """
+
     if '.' not in name:
         return name + str(num)
     else:
         index = name.rfind('.')
         return name[:index] + str(num) + name[index:]
 
+
 def _get_bool_resp(prompt):
-    """Gets a yes or no from user input and maps to a boolean."""
+    """
+    Gets a yes or no from user input and maps to a boolean.
+
+    prompt should be a String that contains a user prompt (e.g., "Please input
+    your name: ")
+    """
+
     while True:
         resp = input(prompt).lower()
         if resp in ('y', 'yes'):
@@ -95,8 +121,10 @@ def _get_bool_resp(prompt):
         elif resp in ('n', 'no'):
             return False
 
+
 def _process_other_input(args):
-    """Processes command-line args (but not -help)."""
+    """Processes a list of command-line args (but not -help)."""
+
     index = 0
     while index < len(args):
         try:
@@ -120,11 +148,18 @@ def _process_other_input(args):
             return err
     return None
     
+
 def _writefile(songfile, song):
-    """Opens a file and writes a song tab to it."""
+    """
+    Opens a file and writes a song tab to it.
+
+    songfile is the name of the file to open. song must be a Song object.
+    """
+
     f = open(songfile, 'w')
     f.write(str(song))
     f.close()
+
 
 def djenterate():
     """
@@ -162,6 +197,7 @@ def djenterate():
                 continue
         _writefile(songfile, song)
     return 0
+
 
 # Main script layout. Process args then djenterate some songs
 if __name__ == '__main__':

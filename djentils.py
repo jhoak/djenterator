@@ -26,18 +26,30 @@ _default_tuning = music.Tuning("drop", "a")
 _roll = random.random
 _bad_endings = ['h', 'p']   # Phrases cannot end in these
 
+
 def _empty_note_ls():
     """Returns an "empty line" (see music.py)."""
     return ['-'] * notes_per_phrase
 
+
 def _roll_note_and_mute():
     """Picks the next note (0 or 1) and may/may not mute it."""
+
     note = '0' if _roll() < zero_rate else '1'
     mute = 'm' if _roll() < mute_rate else '-'
     return note, mute
 
+
 def _roll_tremolo(notes, mutes, index, end):
-    """Adds notes to a tremolo section; might add none by chance."""
+    """
+    Adds notes to a tremolo section; might add none by chance.
+
+    notes and mutes must be lists of equal length. notes must only have
+    notes of the chromatic scale (or -'s), and mutes must have only -'s or 
+    m's. index must be an integer > 0 but less than the length of either list.
+    end must be the last index (exclusive!).
+    """
+
     while index < end - 1:
         if _roll() < note_rate:
             notes[index], mutes[index] = _roll_note_and_mute()
@@ -46,6 +58,7 @@ def _roll_tremolo(notes, mutes, index, end):
             break
     return index
 
+
 def _add_hammerpull(notes, mutes, index):
     """
     Adds a hammer-on/pull off depending on last note.
@@ -53,6 +66,11 @@ def _add_hammerpull(notes, mutes, index):
     The resulting note might be muted. Also the first note might be muted.
     So you can hammer-on a muted open string into a nonmuted 1st-fret. 
     ...Why? Well, why not?
+
+    As before: notes and mutes must be lists of equal length. notes must only
+    have notes of the chromatic scale (or -'s), and mutes must have only -'s
+    or m's. index must be an integer > 0 but less than the length of either
+    list.
     """
 
     toadd = ['h', '1'] if notes[index - 1] == '0' else ['p', '0']
@@ -61,10 +79,17 @@ def _add_hammerpull(notes, mutes, index):
         mutes[index + 1] = 'm'
     return index + 2
 
+
 def _roll_effects(notes, mutes, start_index):
     """
     Uses probability to add tremolo or hammer-on/pulloff after the last note.
+
+    As before: notes and mutes must be lists of equal length. notes must only
+    have notes of the chromatic scale (or -'s), and mutes must have only -'s
+    or m's. start_index must be an integer > 0 but less than the length of
+    either list.
     """
+
     adding = True
     index, end = start_index, len(notes)
     while adding and index < end - 1:
@@ -81,8 +106,15 @@ def _roll_effects(notes, mutes, start_index):
             adding = False
     return index
 
+
 def _roll_repeated_measures(notes, mutes):
-    """Repeat the 1st 1/2 of a phrase in the 2nd 1/2 (according to chance."""
+    """
+    Repeat the 1st 1/2 of a phrase in the 2nd 1/2 (according to chance.
+
+    notes and mutes must be lists of equal length. notes must only have notes 
+    of the chromatic scale (or -'s), and mutes must have only -'s or m's.
+    """
+
     if _roll() < measure_repeat_rate:
         halfway = len(notes) // 2
         notes[halfway:] = notes[:halfway]
@@ -92,8 +124,10 @@ def _roll_repeated_measures(notes, mutes):
         if notes[halfway-1] in _bad_endings:
             notes[halfway-1], mutes[halfway-1] = _roll_note_and_mute()
 
+
 def _gen_phrase():
     """Generates a phrase of a song."""
+
     notes = _empty_note_ls()
     mutes = _empty_note_ls()
     index = 0
@@ -109,6 +143,7 @@ def _gen_phrase():
             index += 1
     return notes, mutes
 
+
 def gen_song(min_phrases, max_phrases=None, tuning=_default_tuning):
     """
     Generates a new song (series of phrases) and returns it.
@@ -116,7 +151,12 @@ def gen_song(min_phrases, max_phrases=None, tuning=_default_tuning):
     Song length here is just measured by the number of phrases (no time or
     tempo involved). Probabilities used by this generator are, as stated,
     described above.
+
+    min_phrases and max_phrases must be integer >= 0 (though max_phrases can
+    be None, or omitted). tuning must be a Tuning object, but by default,
+    drop A on a 9-string guitar will be used.
     """
+
     num_phrases = 0
     song = music.Song(tuning)
     if not max_phrases:
